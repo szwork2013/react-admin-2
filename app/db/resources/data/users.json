@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "name": "admin",
+        "password": "$2a$08$eMvY6aEFaO21MEd7001Ro.XR/kZnQrh9zJgBbiOWHIExLchLArWbO",
+        "is_deleted": 0
+    },
+    {
+        "id": 1,
+        "name": "test",
+        "password": "$2a$08$7m1NkDOrqpSR5lw7QOweY.vQEimmzgn5kA6BJRt0PW/OhhObu7oLK",
+        "is_deleted": 0
+    },
+    {
+        "id": 2,
+        "name": "tfff",
+        "password": "$2a$08$uk9RzeQs7F9c/18KmEkh0.FZLcRcAf1jtD966PkkyIm6XNT.hkaOi",
+        "is_deleted": 0
+    },
+    {
+        "id": 3,
+        "name": "person",
+        "password": "$2a$08$9wAvE./0HEPYSncwSU.rpO5YEB4d90bu4G9lNKumoK2lzVMKYHtHS",
+        "is_deleted": 0
+    }
+]
