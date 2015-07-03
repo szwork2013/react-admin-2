@@ -1,62 +1,46 @@
-var LocalStrategy = require('passport-local').Strategy;
 var User = require('./db/resources/User');
+var Group = require('./db/resources/Group');
 
-// expose this function to our app using module.exports
-module.exports = function(passport) {
-
-    passport.serializeUser(function(user, done) {
-        console.log('serialize id: ' + user);
-        done(null, user.id);
-    });
-
-    passport.deserializeUser(function(id, done) {
-        console.log('deserialize id: ' + id);
-        user = User.findById(id);
-        console.log('user: ' + user);
-        done(null, user);
-    });
-
-    passport.use('signup', new LocalStrategy({
-        usernameField : 'name',
-        passwordField : 'password',
-        passReqToCallback : true
-    },
-    function(req, name, password, done) {
-        console.log('finding by name');
-        var user = User.findByName(name);
-
-        if (user) {
-            console.log('already a user');
-            return done(null, false, 'That email is already taken.');
-        } else {
-            console.log('creating user');
-            var newUser = User.create(name, password);
-            return done(null, newUser);
+var Auth = {
+    isLoggedIn: function(req, res, next) {
+        console.log(req.session);
+        if (req.session.user_id) {
+            console.log(req.session.user_id);
+            return next();
         }
-    }));
 
-    passport.use('login', new LocalStrategy({
-        usernameField : 'name',
-        passwordField : 'password',
-        passReqToCallback : true
+        res.redirect('/');
     },
-    function(req, name, password, done) {
 
-        console.log('finding by name');
+    logout: function(req, res) {
+        delete req.session.user_id;
+        res.redirect('/');
+    },
+
+    login: function(name, password, done) {
         var user = User.findByName(name);
 
         if (!user) {
-            console.log('no user');
-            return done(null, false, 'The credentials were incorrect.');
+            done(null, null);
         }
 
         if(!User.validPassword(user, password)) {
-            console.log('invalid password');
-            return done(null, false, 'The credentials were incorrect.');
+            done(null, null);
         }
 
-        return done(null, user);
-    }));
+        done(null, user);
+    },
 
+    signup: function(name, password, group, done) {
+        var user = User.findByName(name);
 
+        if (user) {
+            return done('username taken', null);
+        } else {
+            var newUser = User.create(name, password, group);
+            return done('success', newUser);
+        }
+    }
 };
+
+module.exports = Auth;

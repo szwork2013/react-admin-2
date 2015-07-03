@@ -1,47 +1,46 @@
-module.exports = function(app, passport) {
+module.exports = function(app, auth) {
 
     app.get('/', function(req, res) {
-        res.render('index.html');
+        if(req.session.user_id) {
+            res.redirect('/profile');
+        } else {
+            res.render('index.html');
+        }
     });
 
-    app.get('/login', function(req, res) {
-        res.render('login.html');
+    app.get('/profile', auth.isLoggedIn, function(req, res) {
+        res.render('profile.html');
     });
 
-    app.get('/signup', function(req, res) {
-        res.render('signup.html');
-    });
-
-    app.get('/profile', isLoggedIn, function(req, res) {
-      console.log('getting prof');
-        res.render('profile.html', {
-            user : req.user
+    app.post('/login', function(req, res, next) {
+        auth.login(req.body.username, req.body.password, function(err, user) {
+            if(!user) {
+                res.status(401).json({errorMessage: 'invalid creds'});
+            } else {
+                req.session.user_id = user.id;
+                res.redirect('/profile');
+                res.render();
+                /*
+                    need to call res.render or res.send is because setting
+                    the cookie does not initiate the response. Send and Render
+                    do. This cookie method just adds a cookie to the response
+                    object.
+                */
+            }
         });
     });
 
-    app.get('/logout', function(req, res) {
-        req.logout();
-        res.redirect('/');
+    app.get('/logout', auth.logout);
+
+    app.post('/signup', function(req, res, next) {
+        auth.signup(req.body.username, req.body.password, req.body.group, function(message, user) {
+            if(!user) {
+                res.status(400).json({errorMessage: message});
+            } else {
+                req.session.user_id = user.id;
+                res.redirect('/profile');
+            }
+        });
     });
 
-    app.post('/signup', passport.authenticate('signup', {
-        successRedirect : '/profile',
-        failureRedirect : '/signup',
-        failureFlash : false
-    }));
-
-    app.post('/login', passport.authenticate('login', {
-        successRedirect : '/profile',
-        failureRedirect : '/login',
-        failureFlash : false
-    }));
-
 };
-
-function isLoggedIn(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-
-    res.redirect('/');
-}

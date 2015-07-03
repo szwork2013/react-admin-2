@@ -5,43 +5,12 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <style>
-            body        { padding-top:80px; }
-        </style>
+        <link rel='stylesheet' href='css/base.css' type='text/css'/>
     </head>
     <body>
-        <div class="container">
-
-            <div class="jumbotron text-center">
-                <h1><span class="fa fa-lock"></span> Node Authentication</h1>
-
-                <p>Login or Register with:</p>
-
-                <a href="/login" class="btn btn-default"><span class="fa fa-user"></span> Local Login</a>
-                <a href="/signup" class="btn btn-default"><span class="fa fa-user"></span> Local Signup</a>
-            </div>
-
-        </div>
-
-        <div id='react-content'></div>
+        <div id='app'></div>
     </body>
 
-    <script type='text/jsx'>
-
-
-        var CommentBox = React.createClass({
-            render: function() {
-                return (
-                  <div className='commentBox'>
-                    Hello, world! I am a CommentBox.
-                  </div>
-                );
-            }
-        });
-        React.render(
-            <CommentBox />,
-            document.getElementById('react-content')
-        );
-    </script>
+    <script type='text/jsx' src='js/index.js'></script>
 
 </html>

@@ -5,6 +5,8 @@ var _ = require('underscore');
 var userDataPath = __dirname + '/data/users.json';
 var users = require(userDataPath);
 
+var Group = require(__dirname + '/Group')
+
 var User = {
 
   users: users,
@@ -12,27 +14,35 @@ var User = {
     writeUserData: function() {
         fs.writeFile(userDataPath, JSON.stringify(this.users, null, 4), function(err) {
             if(err) {
-                return console.log(err);
+                return err;
             }
         });
     },
 
-    create: function(name, password) {
+    create: function(name, password, groupName) {
         console.log('Creating user' + name + ' ' + password);
-        var index = this.users.length;
+        var userId = this.users.length;
         this.users.push({
-            'id': index,
+            'id': userId,
             'name': name,
             'password': this.generateHash(password),
             'is_deleted': 0
         });
 
-        var error = this.writeUserData();
-        if(error) {
-            return error;
+        var err = Group.assignUser(userId, groupName);
+        if(err) {
+            this.users.splice(userId, 1);
+            return err;
         }
 
-        return this.users[index];
+        err = this.writeUserData();
+        if(err) {
+            this.users.splice(userId, 1);
+            // Group.removeUser(userId, groupName);
+            return err;
+        }
+
+        return this.users[userId];
     },
 
     generateHash: function(password) {
