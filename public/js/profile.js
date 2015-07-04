@@ -40,7 +40,11 @@ var Content = React.createClass({
 var Footer = React.createClass({
     render: function() {
         return (
-            <div>Footer</div>
+            <div className='footer'>
+                <div className='copyright'>
+                    Admin 2015
+                </div>
+            </div>
         );
     }
 });

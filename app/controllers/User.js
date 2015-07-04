@@ -2,7 +2,7 @@ var fs = require('fs');
 var bcrypt = require('bcrypt-nodejs');
 var _ = require('underscore');
 
-var userDataPath = __dirname + '/data/users.json';
+var userDataPath = __dirname + '/db/users.json';
 var users = require(userDataPath);
 
 var Group = require(__dirname + '/Group')

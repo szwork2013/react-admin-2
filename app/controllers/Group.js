@@ -1,7 +1,7 @@
 var fs = require('fs');
 var _ = require('underscore');
 
-var groupDataPath = __dirname + '/data/groups.json';
+var groupDataPath = __dirname + '/db/groups.json';
 var groups = require(groupDataPath);
 
 var UserGroup = require(__dirname + '/UserGroup')
