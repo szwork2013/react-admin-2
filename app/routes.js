@@ -1,6 +1,8 @@
+var User = require(__dirname + '/controllers/User.js');
 var Group = require(__dirname + '/controllers/Group.js');
 
-module.exports = function(app, auth) {
+// module.exports = function(app, auth) {
+module.exports = function(router, auth) {
 
     function renderProfile(req, res) {
         console.log(req.session);
@@ -13,9 +15,9 @@ module.exports = function(app, auth) {
         }
     };
 
-    app.get('/', renderProfile);
+    router.get('/', renderProfile);
 
-    app.post('/login', function(req, res, next) {
+    router.post('/login', function(req, res, next) {
         auth.login(req.body.username, req.body.password, function(err, user) {
             if(!user) {
                 res.status(401).json({errorMessage: 'Incorrect name and/or password'});
@@ -26,7 +28,7 @@ module.exports = function(app, auth) {
         });
     });
 
-    app.get('/logout', auth.logout);
+    router.get('/logout', auth.logout);
 
     // app.post('/signup', function(req, res, next) {
     //     auth.signup(req.body.username, req.body.password, req.body.group, function(message, user) {
@@ -39,20 +41,29 @@ module.exports = function(app, auth) {
     //     });
     // });
 
-    app.get('/profile', auth.isLoggedIn, function(req, res) {
-        console.log('profiling');
+    router.get('/profile', auth.isLoggedIn, function(req, res) {
         res.render('profile.html');
     });
 
-    app.get('/admin', auth.isAdmin, function(req, res) {
-        console.log('admining');
+    router.get('/admin', auth.isAdmin, function(req, res) {
         res.render('admin.html');
     });
 
-    app.get('/api/groups', auth.isAdmin, function(req, res) {
-        var groups = Group.findAll();
-        res.json(groups);
-    });
+    router.route('/api/groups/', auth.isAdmin)
+        .get(function(req, res, next) {
+            console.log('q: '+JSON.stringify(req.query, null, 4));
+            var groups = Group.findAll(req.query);
+            res.json(groups);
+        });
+
+    router.route('/api/users/', auth.isAdmin)
+        .get(function(req, res, next) {
+            // var q = url.parse(req.query);
+            console.log('q: '+JSON.stringify(req.query, null, 4));
+            var users = User.findAll(req.query);
+            res.json(users);
+        });
+
 
 
 };

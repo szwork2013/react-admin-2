@@ -4,7 +4,8 @@ var _ = require('underscore');
 var groupDataPath = __dirname + '/db/groups.json';
 var groups = require(groupDataPath);
 
-var UserGroup = require(__dirname + '/UserGroup')
+var User = require(__dirname + '/User');
+var UserGroup = require(__dirname + '/UserGroup');
 
 var Group = {
 
@@ -69,6 +70,19 @@ var Group = {
         });
 
         return foundGroup;
+    },
+
+    findAll: function(query) {
+        var groups = this.groups;
+        if(query.include && query.include === 'user') {
+            _.each(groups, function(group, index) {
+                var userIds = UserGroup.getUsersForGroup(group.id);
+                // var users = User.findByIds(userIds);
+                // console.log(User);
+                // groups.links = {'users': users};
+            });
+        }
+        return groups;
     }
 };
 

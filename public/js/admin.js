@@ -86,15 +86,45 @@ var App = React.createClass({
         };
     },
 
-    showGroups: function() {
-        //get groups
-        this.setState({
-            users: false,
-            groups: true
-        });
+    getGroups: function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', '/api/groups', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            if(xhr.status === 401) {
+                var response = JSON.parse(xhr.responseText);
+                var error = this.state.error;
+                error.credentials = response;
+                this.setState({
+                    error: error
+                });
+            } else {
+                var groups = JSON.parse(xhr.responseText);
+                //get groups
+                this.setState({
+                    users: false,
+                    groups: groups
+                });
+            }
+        }.bind(this);
+
+        xhr.send(null);
     },
 
-    showUsers: function() {
+    showGroups: function() {
+        var Groups = [];
+        this.state.groups.map(function(group, index) {
+            Groups.push(<li key={index}>{group.id}</li>);
+        });
+
+        return (
+            <ul>
+                {Groups}
+            </ul>
+        );
+    },
+
+    getUsers: function() {
         //get users
         this.setState({
             users: true,
@@ -111,11 +141,7 @@ var App = React.createClass({
                 </div>
             );
         } else if (this.state.groups) {
-            MainContent = (
-                <div>
-                    Groups
-                </div>
-            );
+            MainContent = this.showGroups();
         } else {
             MainContent = (
                 <div>
@@ -127,7 +153,7 @@ var App = React.createClass({
         return (
             <div>
                 <Header />
-                <Sidebar showGroups={this.showGroups} showUsers={this.showUsers}/>
+                <Sidebar showGroups={this.getGroups} showUsers={this.getUsers}/>
                 <Content content={MainContent}/>
                 <Footer />
             </div>

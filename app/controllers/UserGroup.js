@@ -21,7 +21,7 @@ var UserGroup = {
         this.userGroups.push({
             'id': userGroupId,
             'user_id': userId,
-            'groupId': groupId
+            'group_id': groupId
         });
 
         var err = this.writeUserGroupData();
@@ -34,13 +34,21 @@ var UserGroup = {
     },
 
 
-    findById: function(groupId) {
-        var foundGroup = _.find(this.groups, function(group) {
-            return group.id === groupId && !group.is_deleted;
-        });
+    // findById: function(groupId) {
+    //     var foundGroup = _.find(this.groups, function(group) {
+    //         return group.id === groupId && !group.is_deleted;
+    //     });
+    //
+    //     return foundGroup;
+    // },
 
-        return foundGroup;
-    },
+    getUsersForGroup: function(groupId) {
+        var userGroups = _.filter(this.userGroups, function(userGroup) {
+            return userGroup.group_id === groupId;
+        });
+        // console.log('usergropu: '+_.pluck(userGroups, 'user_id'));
+        return _.pluck(userGroups, 'user_id');
+    }
 
 };
 

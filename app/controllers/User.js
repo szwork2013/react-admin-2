@@ -61,6 +61,11 @@ var User = {
         return foundUser;
     },
 
+    findByIds: function(userIds) {
+        console.log(userIds);
+        return null
+    },
+
     findByName: function(userName) {
         console.log(bcrypt.hashSync('admin', bcrypt.genSaltSync(8), null));
         var foundUser = _.find(this.users, function(user) {
