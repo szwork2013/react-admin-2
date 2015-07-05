@@ -8,9 +8,9 @@ var Header = React.createClass({
         xhr.open('get', '/logout', true);
         xhr.setRequestHeader('x-access-token', this.props.jwt.token);
         xhr.onload = function() {
-            if(xhr.status === 200) {
-                this.props.onLogout();
-            }
+            // how to set header on refresh?
+            // history.pushState({login: '/'}, 'page 2', '/');
+            this.props.onLogout();
         }.bind(this);
 
         xhr.send();
@@ -168,7 +168,7 @@ var Login = React.createClass({
                 });
             } else {
                 var response = JSON.parse(xhr.responseText);
-                this.props.onLoginSuccess(response)
+                this.props.onLoginSuccess(response);
             }
         }.bind(this);
 
@@ -246,7 +246,7 @@ var SignupPage = React.createClass({
 });
 
 
-var AdminSidebar = React.createClass({
+var Sidebar = React.createClass({
 
     showGroups: function() {
         this.props.showGroups();
@@ -272,7 +272,7 @@ var AdminSidebar = React.createClass({
     }
 });
 
-var AdminContent = React.createClass({
+var Content = React.createClass({
     render: function() {
         return (
             <div className='page'>
@@ -284,17 +284,20 @@ var AdminContent = React.createClass({
     }
 });
 
-var AdminPage = React.createClass({
+var ProfilePage = React.createClass({
     getInitialState: function() {
         return {
+            user: null,
             users: null,
-            groups: null
+            group: null,
+            groups: null,
+            newGroupName: ''
         };
     },
 
     getGroups: function() {
         var xhr = new XMLHttpRequest();
-        xhr.open('get', '/api/groups', true);
+        xhr.open('get', '/api/groups?include=user', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('x-access-token', this.props.jwt.token);
         xhr.onload = function() {
@@ -309,8 +312,11 @@ var AdminPage = React.createClass({
                 var groups = JSON.parse(xhr.responseText);
                 //get groups
                 this.setState({
-                    users: false,
-                    groups: groups
+                    user: null,
+                    users: null,
+                    group: null,
+                    groups: groups,
+                    newGroupName: ''
                 });
             }
         }.bind(this);
@@ -320,7 +326,7 @@ var AdminPage = React.createClass({
 
     getUsers: function() {
         var xhr = new XMLHttpRequest();
-        xhr.open('get', '/api/users', true);
+        xhr.open('get', '/api/users?include=group', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('x-access-token', this.props.jwt.token);
         xhr.onload = function() {
@@ -335,8 +341,11 @@ var AdminPage = React.createClass({
                 var users = JSON.parse(xhr.responseText);
                 //get groups
                 this.setState({
+                    user: null,
                     users: users,
-                    groups: null
+                    group: null,
+                    groups: null,
+                    newGroupName: ''
                 });
             }
         }.bind(this);
@@ -344,23 +353,171 @@ var AdminPage = React.createClass({
         xhr.send(null);
     },
 
+    getGroup: function(groupId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', '/api/groups/' + groupId + '?include=user', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-access-token', this.props.jwt.token);
+        xhr.onload = function() {
+            if(xhr.status === 401) {
+                var response = JSON.parse(xhr.responseText);
+                var error = this.state.error;
+                error.credentials = response;
+                this.setState({
+                    error: error
+                });
+            } else {
+                var group = JSON.parse(xhr.responseText);
+                //get groups
+                this.setState({
+                    user: null,
+                    users: null,
+                    group: group[0],
+                    groups: null,
+                    newGroupName: ''
+                });
+            }
+        }.bind(this);
+
+        xhr.send(null);
+
+    },
+
+    postGroup: function() {
+        var group = {
+            name: this.state.newGroupName
+        };
+        var xhr = new XMLHttpRequest();
+        xhr.open('post', '/api/groups/', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-access-token', this.props.jwt.token);
+        xhr.onload = function() {
+            if(xhr.status === 401) {
+                var response = JSON.parse(xhr.responseText);
+                var error = this.state.error;
+                error.credentials = response;
+                this.setState({
+                    error: error
+                });
+            } else {
+                this.getGroups();
+            }
+        }.bind(this);
+
+        xhr.send(JSON.stringify(group));
+    },
+
+    putGroup: function(group) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('put', '/api/groups/' + group._id, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-access-token', this.props.jwt.token);
+        xhr.onload = function() {
+            if(xhr.status === 401) {
+                var response = JSON.parse(xhr.responseText);
+                var error = this.state.error;
+                error.credentials = response;
+                this.setState({
+                    error: error
+                });
+            } else {
+                this.getGroup(group._id);
+            }
+        }.bind(this);
+
+        xhr.send(JSON.stringify(group));
+
+    },
+
+    deleteGroup: function(group) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('delete', '/api/groups/' + group._id, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-access-token', this.props.jwt.token);
+        xhr.onload = function() {
+            if(xhr.status === 401) {
+                var response = JSON.parse(xhr.responseText);
+                var error = this.state.error;
+                error.credentials = response;
+                this.setState({
+                    error: error
+                });
+            } else {
+                this.getGroups();
+            }
+        }.bind(this);
+
+        xhr.send(JSON.stringify(group));
+
+    },
+
+    setNewGroupName: function(e) {
+        this.setState({
+            newGroupName: e.target.value
+        });
+    },
+
     showGroups: function() {
         var Groups = [];
+        var self = this;
         this.state.groups.map(function(group, index) {
-            Groups.push(<li key={index}>{group.name}</li>);
+            Groups.push(
+                <li onClick={self.getGroup.bind(self, group._id)}
+                    className='group-item'
+                    key={index}>
+
+                    {group.name}
+                </li>
+            );
         });
 
+        Groups.push(
+            <li className='group-item-new'
+                key={'new-group'}>
+
+
+                New Group
+
+                <input type='text'
+                       name='name'
+                       value={this.state.newGroupName}
+                       onChange={this.setNewGroupName}
+                       placeholder='Name' />
+
+               <button type='submit' onClick={this.createGroup}>Create</button>
+
+            </li>
+        );
+
         return (
-            <ul>
+            <ul className='group-list'>
                 {Groups}
             </ul>
         );
     },
 
+    createGroup: function() {
+        if(this.state.newGroupName) {
+            this.postGroup();
+        }
+    },
+
+
     showUsers: function() {
         var Users = [];
         this.state.users.map(function(user, index) {
-            Users.push(<li key={index}>{user.name}</li>);
+            Users.push(
+                <div className='list-item' key={index}>
+                    <div key={user.name} className='name'>
+                        <div className='item-header'>User Name</div>
+                        <div className='item-content'>{user.name}</div>
+                    </div>
+                    <div key={user.group.id} className='name'>
+                        <div className='item-header'>Group Name</div>
+                        <div className='item-content'>{user.group.name}</div>
+                    </div>
+                </div>
+            );
         });
 
         return (
@@ -370,12 +527,71 @@ var AdminPage = React.createClass({
         );
     },
 
+    removeFromGroup: function(userId) {
+        var users = [];
+        this.state.group.users.map(function(user, index) {
+            if(user._id !== userId) {
+                users.push(user._id);
+            }
+        });
+        var updatedGroup = this.state.group;
+        updatedGroup.users = users;
+
+        this.putGroup(updatedGroup);
+    },
+
+    removeGroup: function(event) {
+        event.preventDefault();
+        if(this.state.group.users.length === 0) {
+            this.deleteGroup(this.state.group);
+        }
+    },
+
+    showGroup: function() {
+        var userTable = [];
+
+        var self = this;
+        var groupId = this.state.group._id;
+        this.state.group.users.map(function(user, index) {
+            userTable.push(
+                <tr>
+                    <td>{user.name}</td>
+                    <td onClick={self.removeFromGroup.bind(self, user._id)}><i className="fa fa-times"></i></td>
+                </tr>
+            );
+        });
+
+
+        return (
+            <div>
+                {this.state.group.name}
+                 <a href='' onClick={this.removeGroup}>delete group</a>
+                <table className='user-table'>
+                    <thead>
+                        <tr>
+                            <td>User</td>
+                            <td>Remove from Group</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {userTable}
+                    </tbody>
+                </table>
+
+            </div>
+        );
+    },
+
     render: function() {
         var MainContent;
         if(this.state.users) {
             MainContent = this.showUsers();
         } else if (this.state.groups) {
             MainContent = this.showGroups();
+        } else if (this.state.user) {
+
+        } else if (this.state.group) {
+            MainContent = this.showGroup();
         } else {
             MainContent = (
                 <div>
@@ -386,24 +602,12 @@ var AdminPage = React.createClass({
 
         return (
             <div>
-                <AdminSidebar showGroups={this.getGroups} showUsers={this.getUsers}/>
-                <AdminContent content={MainContent}/>
+                <Sidebar showGroups={this.getGroups} showUsers={this.getUsers}/>
+                <Content content={MainContent}/>
             </div>
         );
     }
 });
-
-
-var ProfilePage = React.createClass({
-    render: function() {
-        return (
-            <div>
-                Profile Page
-            </div>
-        );
-    }
-});
-
 
 var Footer = React.createClass({
     render: function() {
@@ -438,16 +642,13 @@ var App = React.createClass({
 
     removeToken: function() {
         delete localStorage.jwt;
+        // history.pushState({login: '/'}, 'page 2', '/');
     },
 
     render: function() {
         var Content;
         if(this.state.jwt) {
-            if(this.state.jwt.admin) {
-                Content = <AdminPage jwt={this.state.jwt}/>
-            } else {
-                Content = <ProfilePage jwt={this.state.jwt}/>
-            }
+            Content = <ProfilePage jwt={this.state.jwt}/>
         } else {
             Content = <SignupPage />
         }

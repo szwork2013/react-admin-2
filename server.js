@@ -12,6 +12,7 @@ var User   = require('./app/models/user');
 var Group   = require('./app/models/group');
 var UserGroup   = require('./app/models/userGroup');
 var bcrypt   = require('bcrypt-nodejs');
+var _ = require('underscore');
 
 var port     = process.env.PORT || 8080;
 mongoose.connect(config.database);
@@ -49,54 +50,37 @@ routes.post('/login', function(req, res) {
     if(!user.validPassword(req.body.password)) {
         res.status(401).json({ success: false, message: 'Authentication failed. Wrong password.' });
       } else {
+        var userToken = {
+            userName: user.name,
+            userId: user._id,
+            admin: false
+        };
 
-        var token = jwt.sign(user, app.get('superSecret'), {
-          expiresInMinutes: 1440 // expires in 24 hours
-        });
+        // find if user is admin
+        Group.find({users: user._id}, function(err, groups) {
+            _.each(groups, function(group) {
+                console.log(group);
+                if(group.admin) {
+                    userToken.admin = true;
+                }
+            });
 
-        console.log('user: ' + user);
-        res.json({
-          admin: user.admin,
-          token: token
+            var token = jwt.sign(userToken, app.get('superSecret'), {
+              expiresInMinutes: 1440 // expires in 24 hours
+            });
+
+            res.json({
+                user: user.name,
+                admin: userToken.admin,
+                token: token
+            });
+
         });
       }
 
     }
 
   });
-});
-
-function ensureAuthorized(req, res, next) {
-    var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
-    if (token) {
-      jwt.verify(token, app.get('superSecret'), function(err, decoded) {
-        if (err) {
-          return res.json({ success: false, message: 'Failed to authenticate token.' });
-        } else {
-          req.decoded = decoded;
-          next();
-        }
-      });
-
-    } else {
-      return res.status(403).send({
-          success: false,
-          message: 'No token provided.'
-      });
-    }
-}
-
-routes.get('/logout', ensureAuthorized, function(req, res) {
-    res.status(200).json();
-});
-
-routes.get('/admin', ensureAuthorized, function(req, res) {
-    res.render('admin.html');
-});
-
-routes.get('/profile', ensureAuthorized, function(req, res) {
-    res.render('profile.html');
 });
 
 
@@ -127,47 +111,149 @@ apiRoutes.use(function(req, res, next) {
 });
 
 apiRoutes.get('/', function(req, res) {
-  res.json({ message: 'Welcome to the coolest API on earth!' });
+  res.json({
+        routes: {
+            users: '/users',
+            groups: '/groups'
+        }
+    });
 });
 
 apiRoutes.route('/users')
     .get(function(req, res) {
-        var q = User.find();
-        if(req.query.include && req.query.include === 'group') {
-
+        console.log('decoded: ' + JSON.stringify(req.decoded,null,4));
+        var q;
+        if(req.decoded.admin) {
+            q = Group.find();
+        } else {
+            //non-admin can only see groups that they belong to
+            q = Group.find({users:
+                { $in: [
+                    req.decoded.userId
+                ]}
+            });
         }
-        q.exec(function(err, users) {
-            // _.each(users, function(user, index) {
-            //     var admin = false;
-            //     var groups = [];
-            //     UserGroup.find({user: user._id}), function(err, userGroups) {
-            //         // _.each()
-            //         response.linked.push(userGroups);
-            //     };
-            // });
-            // response.push(users);
-            res.json(users);
-        });
+
+        q.populate('users', 'name');
+        q.lean();
+        if(req.query.include && req.query.include === 'group') {
+            q.exec(function(err, groups) {
+                var users = [];
+                _.each(groups, function(group, index) {
+                    var usersInGroup = _.map(group.users, function(user) {
+                       user.group = { id: group._id, name: group.name };
+                       return user;
+                    });
+                    users.push(usersInGroup);
+                });
+                res.json(_.flatten(users));
+            });
+        } else {
+            q.exec(function(err, groups) {
+                var users = [];
+                _.each(groups, function(group, index) {
+                    var usersInGroup = _.map(group.users, function(user) {
+                       return user;
+                    });
+                    users.push(usersInGroup);
+                });
+                res.json(_.flatten(users));
+            });
+        }
     });
 
 apiRoutes.route('/groups')
     .get(function(req, res) {
-        var q = Group.find();
+        console.log('decoded: ' + JSON.stringify(req.decoded,null,4));
+        var q;
+        if(req.decoded.admin) {
+            var q = Group.find();
+        } else {
+            //non-admin can only see groups that they belong to
+            var q = Group.find({users:
+                { $in: [
+                    req.decoded.userId
+                ]}
+            });
+        }
         if(req.query.include && req.query.include === 'user') {
-            q.populate('user', 'name');
+            q.populate('users', 'name');
         }
         q.exec(function(err, groups) {
             res.json(groups);
         });
+    })
+
+    .post(function(req, res) {
+        console.log('decoded: ' + JSON.stringify(req.decoded,null,4));
+        if(!req.decoded.admin) {
+            res.json();
+            return;
+        }
+        console.log(req.body);
+        var newGroup = new Group({
+           name: req.body.name,
+           admin: false,
+           users: []
+       });
+
+       newGroup.save(function(err) {
+           if (err) throw err;
+           console.log('Created newGroup');
+       });
+
+        return res.json();
+
     });
 
-apiRoutes.route('/userGroups')
+apiRoutes.route('/groups/:id')
     .get(function(req, res) {
-        UserGroup.find()
-        .populate(['user', 'group'])
-        .exec(function(err, userGroups) {
-            res.json(userGroups);
+        console.log('decoded: ' + JSON.stringify(req.decoded,null,4));
+        var q;
+        if(req.decoded.admin) {
+            var q = Group.find({_id: req.params.id});
+        } else {
+            //non-admin can only see groups that they belong to
+            var q = Group.find({users:
+                { $in: [
+                    req.decoded.userId
+                ]}
+            });
+        }
+        if(req.query.include && req.query.include === 'user') {
+            q.populate('users', 'name');
+        }
+        q.exec(function(err, groups) {
+            res.json(groups);
         });
+    })
+
+    .put(function(req, res) {
+        console.log('decoded: ' + JSON.stringify(req.decoded,null,4));
+        if(!req.decoded.admin) {
+            res.json();
+            return;
+        }
+        console.log(req.body);
+        Group.findOneAndUpdate(
+            {_id: req.params.id},
+            req.body,
+            {upsert: true},
+            function(err, group) {
+                if (err) return res.send(500, { error: err });
+                return res.json(group);
+            });
+    })
+
+    .delete(function(req, res) {
+        if(!req.decoded.admin) {
+            res.json();
+            return;
+        }
+        Group.findByIdAndRemove(req.params.id, function(err) {
+            if (err) return res.send(500, {error: err});
+            res.json();
+        })
     });
 
 

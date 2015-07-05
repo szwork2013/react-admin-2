@@ -16,7 +16,7 @@ var build = function(User, Group, UserGroup) {
     var adminGroup = new Group({
         name: 'Admin',
         admin: true,
-        user: admin._id
+        users: [admin._id]
     });
 
     adminGroup.save(function(err) {
@@ -24,23 +24,37 @@ var build = function(User, Group, UserGroup) {
         console.log('Created adminGroup');
     });
 
+    var regularPass = bcrypt.hashSync('regular', bcrypt.genSaltSync(8), null);
+    var regularUser = new User({
+            name: 'regular1',
+            password: regularPass
+        });
 
+    regularUser.save(function(err) {
+        if (err) throw err;
+        console.log('Created regular1');
+    });
 
+    var regularUser2 = new User({
+            name: 'regular2',
+            password: regularPass
+        });
 
-    // var userGroup = new UserGroup({
-    //     user: admin._id,
-    //     group: adminGroup._id
-    // });
-    //
-    // userGroup.save(function(err) {
-    //     if (err) throw err;
-    //     console.log('Created userGroup');
-    // });
+    regularUser2.save(function(err) {
+        if (err) throw err;
+        console.log('Created regular2');
+    });
 
+    var regularGroup = new Group({
+        name: 'Regular',
+        admin: false,
+        users: [regularUser._id, regularUser2]
+    });
 
-
-
-
+    regularGroup.save(function(err) {
+        if (err) throw err;
+        console.log('Created regularGroup');
+    });
 };
 
 var BuildDB = function(User, Group, UserGroup) {
