@@ -463,7 +463,7 @@ var ProfilePage = React.createClass({
         this.state.groups.map(function(group, index) {
             Groups.push(
                 <li onClick={self.getGroup.bind(self, group._id)}
-                    className='group-item'
+                    className='resource-item'
                     key={index}>
 
                     {group.name}
@@ -472,7 +472,7 @@ var ProfilePage = React.createClass({
         });
 
         Groups.push(
-            <li className='group-item-new'
+            <li className='resource-item-new'
                 key={'new-group'}>
 
 
@@ -490,7 +490,7 @@ var ProfilePage = React.createClass({
         );
 
         return (
-            <ul className='group-list'>
+            <ul className='resource-list'>
                 {Groups}
             </ul>
         );
@@ -502,26 +502,26 @@ var ProfilePage = React.createClass({
         }
     },
 
+    getUser: function(userId) {
+
+    },
 
     showUsers: function() {
         var Users = [];
+        var self = this;
         this.state.users.map(function(user, index) {
             Users.push(
-                <div className='list-item' key={index}>
-                    <div key={user.name} className='name'>
-                        <div className='item-header'>User Name</div>
-                        <div className='item-content'>{user.name}</div>
-                    </div>
-                    <div key={user.group.id} className='name'>
-                        <div className='item-header'>Group Name</div>
-                        <div className='item-content'>{user.group.name}</div>
-                    </div>
-                </div>
+                <li onClick={self.getUser.bind(self, user._id)}
+                    className='resource-item'
+                    key={index}>
+
+                    {user.name}
+                </li>
             );
         });
 
         return (
-            <ul>
+            <ul className='resource-list'>
                 {Users}
             </ul>
         );
@@ -563,14 +563,14 @@ var ProfilePage = React.createClass({
 
 
         return (
-            <div>
+            <div className='resource-page'>
                 {this.state.group.name}
-                 <a href='' onClick={this.removeGroup}>delete group</a>
+                <a className='delete-resource' href='' onClick={this.removeGroup}>Delete Group</a>
                 <table className='user-table'>
                     <thead>
                         <tr>
                             <td>User</td>
-                            <td>Remove from Group</td>
+                            <td>Remove</td>
                         </tr>
                     </thead>
                     <tbody>

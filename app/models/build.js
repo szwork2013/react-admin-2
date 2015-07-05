@@ -1,6 +1,6 @@
 var bcrypt   = require('bcrypt-nodejs');
 
-var build = function(User, Group, UserGroup) {
+var build = function(User, Group) {
 
     var adminPass = bcrypt.hashSync('admin', bcrypt.genSaltSync(8), null);
     var admin = new User({
@@ -57,11 +57,11 @@ var build = function(User, Group, UserGroup) {
     });
 };
 
-var BuildDB = function(User, Group, UserGroup) {
+var BuildDB = function(User, Group) {
 
     User.findOne({}, function(err, doc) {
         if(!doc) {
-            build(User, Group, UserGroup);
+            build(User, Group);
         }
     });
 
